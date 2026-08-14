@@ -21,11 +21,12 @@ Difficulty knobs, both near the top of the `<script>`:
 
 ## Deploying
 
-`.github/workflows/pages.yml` publishes the repo root to GitHub Pages on every push to `main`.
+GitHub Pages serves the repo root of `main` as-is, so every push to `main` republishes the
+site. No workflow, no build.
 
-One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The
-workflow can't do this for itself — the Actions token isn't permitted to create the Pages
-site (`Resource not accessible by integration`).
+The setting is **Settings → Pages → Build and deployment → Source: Deploy from a branch**,
+pointed at `main` and `/ (root)`. The empty `.nojekyll` file keeps Jekyll from mangling the
+files on the way out.
 
 ## Adding another game
 
