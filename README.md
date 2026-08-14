@@ -42,8 +42,9 @@ Difficulty knobs, in the block marked `Difficulty knobs` at the top of the `<scr
 
 You're the cat; chase the pups around a 3D park. No timer, no losing.
 
-- Drag anywhere (or arrow keys / WASD) to run. Pups flee when you get close, but
-  you're faster.
+- Drag anywhere (or arrow keys / WASD) to run. The camera swings behind you, and
+  dog-face bubbles at the screen edges point to off-screen pups.
+- Pups flee when you get close, but you're faster.
 - Each catch is a bone for the score. Every 5 catches adds another pup, up to 6.
 - The 3D is a dependency-free sprite scaler: emoji billboards perspective-projected
   onto a ground plane, camera trailing the cat. No WebGL, no libraries.
