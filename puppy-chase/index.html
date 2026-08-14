@@ -13,7 +13,7 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%90%BE%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;800&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
 <style>
   :root{
     --sky1:#8ED4F0; --sky2:#C8ECF7;
@@ -122,6 +122,24 @@ const START_DOGS  = 3;
 const MAX_DOGS    = 6;     // +1 pup every 5 catches, up to this
 const PARK        = 42;    // half-size of the park
 
+// platforms without a color emoji font (some desktops) draw the whole cast as
+// faint monochrome outlines — detect that and swap in the Noto Color Emoji webfont
+let EMOJI_FONT = 'sans-serif';
+(function(){
+  try{
+    const c = document.createElement('canvas'); c.width = c.height = 24;
+    const g = c.getContext('2d');
+    g.font = '20px sans-serif'; g.textBaseline = 'top'; g.fillText('🐶', 0, 0);
+    const d = g.getImageData(0,0,24,24).data;
+    let color = false;
+    for(let i=0;i<d.length;i+=4){
+      if(d[i+3]>16 && (Math.abs(d[i]-d[i+1])>16 || Math.abs(d[i+1]-d[i+2])>16)){ color=true; break; }
+    }
+    if(!color && document.fonts)
+      document.fonts.load("20px 'Noto Color Emoji'").then(()=>{ EMOJI_FONT = "'Noto Color Emoji', sans-serif"; });
+  }catch(e){}
+})();
+
 const cv = document.getElementById('game');
 const cx2d = cv.getContext('2d');
 let W=0, H=0, DPR=1, HORIZON=0, FOCAL=0;
@@ -131,14 +149,17 @@ function resize(){
   cv.width = W*DPR; cv.height = H*DPR;
   cx2d.setTransform(DPR,0,0,DPR,0,0);
   HORIZON = H*0.32;
-  FOCAL = Math.max(W,H)*0.75;
+  // wide enough to see the park, small enough that the cat (at relz=CAM_BACK)
+  // always projects above the bottom edge on any aspect ratio
+  FOCAL = Math.min(H*0.80, W*0.95);
 }
 addEventListener('resize', resize); resize();
 
 /* ---------- world ---------- */
 const CAM_BACK = 9, CAM_H = 5;
-const cat = {x:0, z:0, vx:0, vz:0, emoji:'🐱', size:1.5, bob:0};
+const cat = {x:0, z:0, vx:0, vz:0, emoji:'🐱', size:1.6, bob:0};
 const cam = {x:0, z:-CAM_BACK};
+let yaw = 0;   // camera heading; 0 faces +z, swings behind the cat as it runs
 const dogs = [];
 const props = [];
 const DOG_EMOJI = ['🐶','🐕','🐩','🦮'];
@@ -147,12 +168,12 @@ let score = 0, milestone = 0;
 function rnd(a,b){ return a + Math.random()*(b-a); }
 function spawnDog(){
   // drop the pup on a ring around the cat, clamped inside the park
-  const ang = rnd(0, Math.PI*2), d = rnd(20, 32);
+  const ang = rnd(0, Math.PI*2), d = rnd(14, 24);
   dogs.push({
     x: Math.max(-PARK, Math.min(PARK, cat.x + Math.cos(ang)*d)),
     z: Math.max(-PARK, Math.min(PARK, cat.z + Math.sin(ang)*d)),
     vx:0, vz:0, emoji: DOG_EMOJI[dogs.length % DOG_EMOJI.length],
-    size:1.4, bob:rnd(0,6), turn:0
+    size:1.6, bob:rnd(0,6), turn:rnd(0.5,1.5), wang:rnd(0,Math.PI*2)
   });
 }
 for(let i=0;i<START_DOGS;i++) spawnDog();
@@ -166,9 +187,14 @@ for(let i=0;i<46;i++){
     emoji: Math.random()<0.75?'🌳':'🌲', size:rnd(2.6,3.6)
   });
 }
-for(let i=0;i<40;i++){
+// a sparse outer grove so the horizon isn't empty when the camera faces outward
+for(let i=0;i<24;i++){
+  const ang = rnd(0,Math.PI*2), d = PARK + rnd(6,20);
+  props.push({ x:Math.cos(ang)*d, z:Math.sin(ang)*d, emoji:'🌳', size:rnd(2.4,3.4) });
+}
+for(let i=0;i<60;i++){
   props.push({ x:rnd(-PARK,PARK), z:rnd(-PARK,PARK),
-    emoji:['🌼','🌷','🍄','🌿'][i%4], size:rnd(0.5,0.8) });
+    emoji:['🌼','🌷','🍄','🌿','🌱','🪨'][i%6], size:rnd(0.5,0.8) });
 }
 const clouds=[]; for(let i=0;i<5;i++) clouds.push({x:rnd(0,1), y:rnd(0.03,0.22), s:rnd(28,52), v:rnd(2,6)});
 
@@ -225,21 +251,32 @@ function update(dt){
   if(keys['arrowup']||keys['w']) iz+=1;
   if(keys['arrowdown']||keys['s']) iz-=1;
   if(!ix && !iz && pointer){
-    const dx = pointer.x - W/2, dy = pointer.y - H*0.72;
+    const anchorY = HORIZON + CAM_H/CAM_BACK*FOCAL;   // the cat's screen row
+    const dx = pointer.x - W/2, dy = pointer.y - anchorY;
     const m = Math.hypot(dx,dy);
     if(m>18){ ix = dx/m; iz = -dy/m; }
   }
+  // input is screen-relative: rotate it by the camera yaw into world space
   const im = Math.hypot(ix,iz)||1;
-  cat.vx += (ix/im*CAT_SPEED - cat.vx)*Math.min(1, dt*8);
-  cat.vz += (iz/im*CAT_SPEED*(ix||iz?1:0) - cat.vz)*Math.min(1, dt*8);
-  if(!ix && !iz){ cat.vx*= (1-Math.min(1,dt*6)); cat.vz*=(1-Math.min(1,dt*6)); }
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  const wx = (ix*cy + iz*sy)/im, wz = (-ix*sy + iz*cy)/im;
+  const moving = (ix||iz) ? 1 : 0;
+  cat.vx += (wx*CAT_SPEED*moving - cat.vx)*Math.min(1, dt*8);
+  cat.vz += (wz*CAT_SPEED*moving - cat.vz)*Math.min(1, dt*8);
+  if(!moving){ cat.vx*= (1-Math.min(1,dt*6)); cat.vz*=(1-Math.min(1,dt*6)); }
   cat.x = Math.max(-PARK, Math.min(PARK, cat.x + cat.vx*dt));
   cat.z = Math.max(-PARK, Math.min(PARK, cat.z + cat.vz*dt));
   cat.bob += dt * (4 + Math.hypot(cat.vx,cat.vz)*1.5);
 
-  // camera trails the cat with a soft lerp
-  cam.x += (cat.x - cam.x)*Math.min(1, dt*5);
-  cam.z += (cat.z - CAM_BACK - cam.z)*Math.min(1, dt*5);
+  // camera swings behind the cat's direction of travel, then trails its position
+  const spd = Math.hypot(cat.vx, cat.vz);
+  if(spd > 1.5){
+    const target = Math.atan2(cat.vx, cat.vz);
+    const dy = ((target - yaw + Math.PI*3) % (Math.PI*2)) - Math.PI;
+    yaw += dy * Math.min(1, dt*2.2);
+  }
+  cam.x += (cat.x - Math.sin(yaw)*CAM_BACK - cam.x)*Math.min(1, dt*5);
+  cam.z += (cat.z - Math.cos(yaw)*CAM_BACK - cam.z)*Math.min(1, dt*5);
 
   for(const d of dogs){
     const ddx = d.x-cat.x, ddz = d.z-cat.z;
@@ -249,7 +286,7 @@ function update(dt){
       document.getElementById('score').textContent = '🦴 ' + score;
       catchJingle();
       toast(CATCH_TOASTS[score % CATCH_TOASTS.length]);
-      const ang = rnd(0,Math.PI*2), rd = rnd(24,34);
+      const ang = rnd(0,Math.PI*2), rd = rnd(16,26);
       d.x = Math.max(-PARK,Math.min(PARK, cat.x+Math.cos(ang)*rd));
       d.z = Math.max(-PARK,Math.min(PARK, cat.z+Math.sin(ang)*rd));
       if(score % 5 === 0){
@@ -279,14 +316,19 @@ function update(dt){
 }
 
 /* ---------- render ---------- */
+function camSpace(x,z){
+  const rx = x - cam.x, rz = z - cam.z;
+  const cy = Math.cos(yaw), sy = Math.sin(yaw);
+  return { crx: rx*cy - rz*sy, crz: rx*sy + rz*cy };
+}
 function project(x,z){
-  const relz = z - cam.z;
-  if(relz < 0.3) return null;
+  const {crx, crz} = camSpace(x,z);
+  if(crz < 0.3) return null;
   return {
-    sx: W/2 + (x - cam.x)/relz * FOCAL,
-    sy: HORIZON + CAM_H/relz * FOCAL,
-    scale: FOCAL/relz,
-    relz
+    sx: W/2 + crx/crz * FOCAL,
+    sy: HORIZON + CAM_H/crz * FOCAL,
+    scale: FOCAL/crz,
+    relz: crz
   };
 }
 function render(){
@@ -294,25 +336,19 @@ function render(){
   let g = cx2d.createLinearGradient(0,0,0,HORIZON);
   g.addColorStop(0,'#8ED4F0'); g.addColorStop(1,'#DFF4FB');
   cx2d.fillStyle = g; cx2d.fillRect(0,0,W,HORIZON);
-  cx2d.font = '28px sans-serif'; cx2d.textAlign='center'; cx2d.textBaseline='middle';
+  cx2d.font = '28px '+EMOJI_FONT; cx2d.textAlign='center'; cx2d.textBaseline='middle';
   for(const c of clouds){
-    cx2d.font = c.s+'px sans-serif';
+    cx2d.font = c.s+'px '+EMOJI_FONT;
     cx2d.fillText('☁️', c.x*W, HORIZON*(c.y/0.25));
   }
   // lawn
   g = cx2d.createLinearGradient(0,HORIZON,0,H);
   g.addColorStop(0,'#9CD98B'); g.addColorStop(1,'#6FBF5C');
   cx2d.fillStyle = g; cx2d.fillRect(0,HORIZON,W,H-HORIZON);
-  // mowing stripes: world-z lines project to horizontal bands
-  cx2d.fillStyle = '#7ec96d55';
-  const z0 = Math.floor(cam.z);
-  for(let zi = z0+1; zi < cam.z+80; zi++){
-    if(((zi % 2)+2)%2 !== 0) continue;
-    const a = project(cam.x, zi), b = project(cam.x, zi+1);
-    if(!a||!b) continue;
-    if(a.sy - b.sy < 0.5) break;
-    cx2d.fillRect(0, b.sy, W, a.sy - b.sy);
-  }
+  // haze band at the horizon for depth
+  g = cx2d.createLinearGradient(0,HORIZON,0,HORIZON+H*0.08);
+  g.addColorStop(0,'#DFF4FBcc'); g.addColorStop(1,'#DFF4FB00');
+  cx2d.fillStyle = g; cx2d.fillRect(0,HORIZON,W,H*0.08);
 
   // billboards, far to near
   const items = [];
@@ -326,31 +362,59 @@ function render(){
     drawn.push({it, pr});
   }
   drawn.sort((A,B)=>B.pr.relz - A.pr.relz);
+  for(const d of dogs) d.onScreen = false;
   for(const {it,pr} of drawn){
-    const px = pr.scale * it.size;
+    const px = Math.min(pr.scale * it.size, H*0.6);
     if(px < 3 || pr.sx < -px || pr.sx > W+px) continue;
+    if(it.onScreen !== undefined) it.onScreen = true;
     const hop = it.bob!==undefined ? Math.abs(Math.sin(it.bob*2))*px*0.10*(Math.hypot(it.vx||0,it.vz||0)>0.4?1:0.25) : 0;
     // grounding shadow
     cx2d.fillStyle = '#00000022';
     cx2d.beginPath();
     cx2d.ellipse(pr.sx, pr.sy, px*0.34, px*0.10, 0, 0, Math.PI*2);
     cx2d.fill();
-    cx2d.font = px+'px sans-serif';
+    cx2d.font = px+'px '+EMOJI_FONT;
     cx2d.textAlign = 'center'; cx2d.textBaseline = 'alphabetic';
-    const flip = (it.vx||0) > 0.3;   // emoji critters face left by default
+    // flip when moving right in CAMERA space — emoji critters face left by default
+    const cvx = (it.vx||0)*Math.cos(yaw) - (it.vz||0)*Math.sin(yaw);
     cx2d.save();
     cx2d.translate(pr.sx, pr.sy + px*0.06 - hop);
-    if(flip) cx2d.scale(-1,1);
+    if(cvx > 0.3) cx2d.scale(-1,1);
     cx2d.fillText(it.emoji, 0, 0);
     cx2d.restore();
+  }
+
+  // edge bubbles pointing at off-screen pups, nearest three
+  const hidden = dogs.filter(d=>!d.onScreen)
+    .map(d=>({d, dist:Math.hypot(d.x-cat.x, d.z-cat.z)}))
+    .sort((a,b)=>a.dist-b.dist).slice(0,3);
+  let bi = 0;
+  for(const {d} of hidden){
+    const cs = camSpace(d.x, d.z);
+    const a = Math.atan2(cs.crx, cs.crz);
+    const vx = Math.sin(a), vy = -Math.cos(a);
+    const RX = W/2 - 40, RY = H*0.33;
+    const t = Math.min(RX/Math.max(1e-6,Math.abs(vx)), RY/Math.max(1e-6,Math.abs(vy)));
+    const px = W/2 + vx*t, py = H*0.52 + vy*t;
+    const r = 20 + Math.sin(tNow*5 + bi*2)*2;
+    cx2d.fillStyle = '#FFF6E5';
+    cx2d.strokeStyle = '#6B3F17'; cx2d.lineWidth = 3;
+    cx2d.beginPath(); cx2d.arc(px, py, r, 0, Math.PI*2);
+    cx2d.fill(); cx2d.stroke();
+    cx2d.font = '20px '+EMOJI_FONT;
+    cx2d.textAlign='center'; cx2d.textBaseline='middle';
+    cx2d.fillText(d.emoji, px, py+1);
+    bi++;
   }
 }
 
 /* ---------- main loop ---------- */
-let last = performance.now();
+let last = performance.now(), tNow = 0;
 function frame(now){
-  const dt = Math.min(0.05, (now-last)/1000);
-  last = now;
+  // clamp below at 0: the first rAF timestamp can predate the `last` taken
+  // at script load, and a negative dt lets NaN into the simulation
+  const dt = Math.max(0, Math.min(0.05, (now-last)/1000));
+  last = now; tNow = now/1000;
   update(dt);
   render();
   requestAnimationFrame(frame);
