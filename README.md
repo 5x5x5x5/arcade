@@ -21,6 +21,19 @@ Difficulty knobs, both near the top of the `<script>`:
 - `TYPES` — adding a sixth emoji makes matches rarer and the game harder.
 - `Math.floor(score / 300)` in `addScore` — the points per waffle in the stack.
 
+## Puppy Chase 3D (`puppy-chase/`)
+
+You're the cat; chase the pups around a 3D park. No timer, no losing.
+
+- Drag anywhere (or arrow keys / WASD) to run. Pups flee when you get close, but
+  you're faster.
+- Each catch is a bone for the score. Every 5 catches adds another pup, up to 6.
+- The 3D is a dependency-free sprite scaler: emoji billboards perspective-projected
+  onto a ground plane, camera trailing the cat. No WebGL, no libraries.
+
+Difficulty knobs, at the top of the `<script>`: `CAT_SPEED`, `DOG_FLEE` (the gap
+between them is how hard catching is), `FLEE_RADIUS`, and `START_DOGS`/`MAX_DOGS`.
+
 ## Deploying
 
 GitHub Pages serves the repo root of `main` as-is, so every push to `main` republishes the
