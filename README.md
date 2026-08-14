@@ -22,8 +22,10 @@ Difficulty knobs, both near the top of the `<script>`:
 ## Deploying
 
 `.github/workflows/pages.yml` publishes the repo root to GitHub Pages on every push to `main`.
-The first run turns Pages on by itself (`configure-pages` with `enablement: true`), so there's
-nothing to set in **Settings → Pages**.
+
+One-time setup: **Settings → Pages → Build and deployment → Source: GitHub Actions**. The
+workflow can't do this for itself — the Actions token isn't permitted to create the Pages
+site (`Resource not accessible by integration`).
 
 ## Adding another game
 
