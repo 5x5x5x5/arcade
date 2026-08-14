@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Penelope's Waffle Match</title>
-<meta name="description" content="A cozy no-timer match-3 game: cats, waffles, taxis, and the Big Apple.">
+<meta name="description" content="A match-3 diner game: fill Penelope's waffle order before the syrup runs out. Cats, waffles, taxis, and the Big Apple.">
 <meta name="theme-color" content="#8ED4F0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -19,6 +19,7 @@
     --sky1:#8ED4F0; --sky2:#C8ECF7;
     --taxi:#FFC93C; --syrup:#6B3F17; --waffle:#F2A65A;
     --cream:#FFF6E5; --coral:#FF7B54; --skyline:#2E5E8C;
+    --mint:#5BC98F;
   }
   *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   html,body{ height:100%; }
@@ -29,42 +30,79 @@
     min-height:100vh; overflow:hidden; touch-action:manipulation;
     user-select:none; -webkit-user-select:none;
   }
-  header{ text-align:center; padding:14px 10px 4px; z-index:2; }
+  header{ text-align:center; padding:10px 10px 2px; z-index:2; }
   h1{
     font-family:'Fredoka',sans-serif; font-weight:700;
-    color:var(--syrup); font-size:clamp(1.5rem, 6vw, 2.2rem);
+    color:var(--syrup); font-size:clamp(1.3rem, 5.2vw, 2rem);
     text-shadow:0 2px 0 #fff8;
     letter-spacing:.5px;
   }
   h1 .drip{ color:var(--coral); }
   .hud{
-    display:flex; align-items:center; gap:12px; justify-content:center;
-    margin-top:8px; z-index:2;
+    display:flex; align-items:center; gap:8px; justify-content:center;
+    margin-top:6px; z-index:2; flex-wrap:wrap;
   }
-  .score-badge{
+  .badge{
     background:var(--taxi); color:var(--syrup);
     font-family:'Fredoka',sans-serif; font-weight:600;
-    font-size:1.2rem; padding:6px 18px; border-radius:14px;
+    font-size:1.05rem; padding:5px 14px; border-radius:14px;
     border:3px solid var(--syrup); box-shadow:0 3px 0 var(--syrup);
-    min-width:110px; text-align:center;
+    text-align:center;
   }
+  .badge.level{ background:var(--cream); min-width:82px; }
+  .score-badge{ min-width:96px; }
   .sound-btn{
     background:var(--cream); border:3px solid var(--syrup);
-    border-radius:12px; font-size:1.1rem; padding:4px 10px;
+    border-radius:12px; font-size:1.05rem; padding:4px 10px;
     box-shadow:0 3px 0 var(--syrup); cursor:pointer;
   }
   .sound-btn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--syrup); }
   .sound-btn:focus-visible{ outline:3px solid var(--coral); outline-offset:2px; }
 
-  /* Waffle stack */
-  .stack-row{
-    display:flex; align-items:flex-end; gap:6px; margin-top:6px;
-    min-height:34px; z-index:2;
+  /* Timer — a draining syrup bottle */
+  .timer-row{
+    display:flex; align-items:center; gap:8px; margin-top:8px; z-index:2;
+    width:min(92vw, 440px);
   }
-  .stack-cat{ font-size:1.6rem; transform:translateY(2px); }
-  .stack{ display:flex; flex-direction:row; gap:2px; align-items:flex-end; }
-  .stack span{ font-size:1.35rem; display:inline-block; animation:plop .4s ease; }
-  @keyframes plop{ 0%{transform:scale(0) translateY(-20px);} 70%{transform:scale(1.25);} 100%{transform:scale(1);} }
+  .timer-row.hidden{ display:none; }
+  .timer-icon{ font-size:1.3rem; }
+  .timer-track{
+    flex:1; height:16px; background:#fff;
+    border:3px solid var(--syrup); border-radius:12px;
+    box-shadow:0 3px 0 var(--syrup); overflow:hidden;
+  }
+  .timer-fill{
+    height:100%; width:100%;
+    background:linear-gradient(90deg, var(--waffle), var(--taxi));
+    transition:width .12s linear;
+  }
+  .timer-fill.low{ background:var(--coral); }
+  .timer-row.low .timer-icon{ animation:tick-pulse .5s ease infinite; }
+  @keyframes tick-pulse{ 0%,100%{ transform:scale(1);} 50%{ transform:scale(1.25);} }
+  .timer-secs{
+    font-family:'Fredoka',sans-serif; font-weight:600; color:var(--syrup);
+    min-width:36px; text-align:right; font-size:1rem;
+  }
+
+  /* Order ticket */
+  .ticket{
+    display:flex; align-items:center; gap:8px; margin-top:8px;
+    background:var(--cream); border:3px dashed var(--syrup);
+    border-radius:14px; padding:5px 12px; z-index:2;
+    max-width:min(92vw, 440px); flex-wrap:wrap; justify-content:center;
+  }
+  .ticket-cat{ font-size:1.5rem; }
+  .goals{ display:flex; gap:6px; flex-wrap:wrap; justify-content:center; }
+  .goal{
+    display:inline-flex; align-items:center; gap:4px;
+    font-family:'Fredoka',sans-serif; font-weight:600; color:var(--syrup);
+    font-size:1.05rem; padding:2px 8px; border-radius:10px;
+    background:#fff; border:2px solid #0001;
+  }
+  .goal .g-emoji{ font-size:1.2rem; }
+  .goal.done{ background:var(--mint); color:#fff; border-color:var(--mint); }
+  .goal.bump{ animation:bump .3s ease; }
+  @keyframes bump{ 0%,100%{ transform:scale(1);} 45%{ transform:scale(1.18);} }
 
   /* Board */
   #board-wrap{ position:relative; margin-top:10px; z-index:2; }
@@ -111,6 +149,54 @@
   }
   #toast.show{ transform:translate(-50%,-50%) scale(1); }
 
+  /* Floating "+3s" bonuses */
+  .float-time{
+    position:absolute; left:50%; top:8px; transform:translateX(-50%);
+    font-family:'Fredoka',sans-serif; font-weight:700; font-size:1.4rem;
+    color:var(--mint); text-shadow:0 2px 0 #fff, 0 0 6px #fff;
+    pointer-events:none; z-index:6;
+    animation:floatup 1s ease forwards;
+  }
+  @keyframes floatup{
+    from{ opacity:1; transform:translate(-50%, 0); }
+    to{ opacity:0; transform:translate(-50%, -34px); }
+  }
+
+  /* Overlay / cards */
+  .overlay{
+    position:fixed; inset:0; z-index:10;
+    display:flex; align-items:center; justify-content:center;
+    background:#2E5E8Ccc; backdrop-filter:blur(3px);
+    padding:20px; opacity:0; pointer-events:none; transition:opacity .2s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .card{
+    background:var(--cream); border:4px solid var(--syrup);
+    border-radius:24px; box-shadow:0 8px 0 var(--syrup), 0 20px 40px #0004;
+    padding:22px 24px; text-align:center; max-width:360px; width:100%;
+    animation:pop-in .3s cubic-bezier(.34,1.5,.64,1);
+  }
+  @keyframes pop-in{ from{ transform:scale(.8); opacity:0;} to{ transform:scale(1); opacity:1;} }
+  .card h2{
+    font-family:'Fredoka',sans-serif; font-weight:700; color:var(--syrup);
+    font-size:1.7rem; margin-bottom:6px;
+  }
+  .card p{ color:var(--syrup); font-size:1rem; margin-bottom:12px; line-height:1.4; }
+  .card .big{ font-family:'Fredoka',sans-serif; font-size:2.4rem; color:var(--coral); }
+  .card .stat{ font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.1rem; color:var(--syrup); }
+  .card .emoji-row{ font-size:2.2rem; margin-bottom:8px; }
+  .btn{
+    display:block; width:100%; margin-top:10px;
+    font-family:'Fredoka',sans-serif; font-weight:600; font-size:1.15rem;
+    color:var(--syrup); background:var(--taxi);
+    border:3px solid var(--syrup); border-radius:16px;
+    box-shadow:0 4px 0 var(--syrup); padding:10px 14px; cursor:pointer;
+  }
+  .btn.secondary{ background:#fff; }
+  .btn:active{ transform:translateY(3px); box-shadow:0 1px 0 var(--syrup); }
+  .btn:focus-visible{ outline:3px solid var(--coral); outline-offset:2px; }
+  .btn small{ display:block; font-family:'Nunito',sans-serif; font-weight:600; font-size:.8rem; opacity:.75; }
+
   /* Skyline */
   .skyline{
     position:fixed; bottom:0; left:0; width:100%; z-index:0;
@@ -128,6 +214,8 @@
     .tile.selected{ animation:none; }
     .cloud{ animation:none; }
     #toast{ transition:none; }
+    .card{ animation:none; }
+    .timer-row.low .timer-icon{ animation:none; }
   }
 </style>
 </head>
@@ -135,12 +223,18 @@
 <header>
   <h1>Penelope's <span class="drip">Waffle</span> Match</h1>
   <div class="hud">
-    <div class="score-badge">🧇 <span id="score">0</span></div>
+    <div class="badge level">Level <span id="level">1</span></div>
+    <div class="badge score-badge">🧇 <span id="score">0</span></div>
     <button class="sound-btn" id="soundBtn" aria-label="Toggle sound">🔊</button>
   </div>
-  <div class="stack-row">
-    <span class="stack-cat" id="stackCat">🐱</span>
-    <div class="stack" id="stack" aria-label="Waffle stack"></div>
+  <div class="timer-row" id="timerRow">
+    <span class="timer-icon" aria-hidden="true">🍯</span>
+    <div class="timer-track"><div class="timer-fill" id="timerFill"></div></div>
+    <span class="timer-secs" id="timerSecs">90</span>
+  </div>
+  <div class="ticket" id="ticket" aria-label="Penelope's order">
+    <span class="ticket-cat" id="ticketCat">🐱</span>
+    <div class="goals" id="goals"></div>
   </div>
 </header>
 
@@ -186,6 +280,8 @@
 </svg>
 </div>
 
+<div class="overlay" id="overlay"><div class="card" id="card"></div></div>
+
 <script>
 (() => {
   const N = 7;
@@ -193,13 +289,31 @@
   const MSGS4 = ['Purr-fect!','Waffle-y good!','Taxi! Taxi!','Meow-velous!'];
   const MSGS_CASCADE = ['Big Apple Bonus!','Syrup Shower!','Cat-tastic!','Wowza!'];
   const CATS = ['🐱','😺','😸','😻','🤩'];
+  const BEST_KEY = 'waffleMatchBest';
+
+  // Difficulty knobs -------------------------------------------------------
+  const BASE_TIME   = 95;   // seconds on level 1
+  const TIME_DROP   = 4;    // seconds less per level
+  const MIN_TIME    = 55;   // never below this
+  const ORDER_BASE  = 10;   // tiles to collect on level 1
+  const ORDER_STEP  = 2;    // extra tiles per level
+  const TIME_BONUS  = 1.5;  // seconds back per order tile matched
+  const LEFTOVER_PT = 10;   // points per leftover second at level clear
+  // ------------------------------------------------------------------------
 
   const board = document.getElementById('board');
   const scoreEl = document.getElementById('score');
+  const levelEl = document.getElementById('level');
   const toastEl = document.getElementById('toast');
-  const stackEl = document.getElementById('stack');
-  const stackCat = document.getElementById('stackCat');
+  const goalsEl = document.getElementById('goals');
+  const ticketCat = document.getElementById('ticketCat');
   const soundBtn = document.getElementById('soundBtn');
+  const timerRow = document.getElementById('timerRow');
+  const timerFill = document.getElementById('timerFill');
+  const timerSecs = document.getElementById('timerSecs');
+  const overlay = document.getElementById('overlay');
+  const card = document.getElementById('card');
+  const boardWrap = document.getElementById('board-wrap');
 
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const FALL = reduced ? 0 : 260, POP = reduced ? 0 : 200, SWAP = reduced ? 0 : 160;
@@ -208,9 +322,14 @@
 
   let TS = 56;               // tile size px
   let grid = [];             // grid[r][c] = tile object or null
-  let score = 0, waffles = 0;
+  let score = 0;
   let selected = null, busy = false;
   let soundOn = true;
+
+  // phase: 'menu' | 'playing' | 'timeup' | 'clear' | 'over'
+  let phase = 'menu', timed = true;
+  let level = 1, goals = [], timeLeft = 0, levelTime = 0;
+  let timerId = null, lastTick = 0;
 
   // ---------- audio ----------
   let ctx = null;
@@ -227,6 +346,12 @@
     } catch(e){}
   }
   const popSound = lvl => beep(420 + lvl * 120, .12, 'triangle', .15);
+  function fanfare(){
+    [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => beep(f, .18, 'triangle', .13), i * 110));
+  }
+  function sadTrombone(){
+    [392, 349, 311, 262].forEach((f, i) => setTimeout(() => beep(f, .22, 'sawtooth', .08), i * 150));
+  }
 
   soundBtn.addEventListener('click', () => {
     soundOn = !soundOn;
@@ -237,8 +362,8 @@
   // ---------- sizing ----------
   function size(){
     const w = Math.min(innerWidth * .92, 440);
-    const maxH = innerHeight - board.getBoundingClientRect().top - 130;
-    TS = Math.floor(Math.min(w, Math.max(maxH, 240)) / N);
+    const maxH = innerHeight - board.getBoundingClientRect().top - 120;
+    TS = Math.floor(Math.min(w, Math.max(maxH, 220)) / N);
     board.style.width  = TS * N + 'px';
     board.style.height = TS * N + 'px';
     document.documentElement.style.setProperty('--ts', TS + 'px');
@@ -265,6 +390,7 @@
   }
 
   function initBoard(){
+    board.innerHTML = '';
     grid = Array.from({length:N}, () => Array(N).fill(null));
     for (let r = 0; r < N; r++){
       for (let c = 0; c < N; c++){
@@ -339,7 +465,7 @@
 
   // ---------- interaction ----------
   function onTap(t){
-    if (busy) return;
+    if (busy || phase !== 'playing') return;
     if (!selected){
       selected = t; t.el.classList.add('selected'); beep(520, .06);
       return;
@@ -377,6 +503,9 @@
       a.el.classList.remove('nope'); b.el.classList.remove('nope');
     }
     busy = false;
+    // The buzzer may have gone off mid-cascade — settle up now that the board is still.
+    if (phase === 'timeup') finishRound();
+    else if (phase === 'playing' && orderDone()) levelClear();
   }
 
   // ---------- resolution ----------
@@ -389,6 +518,7 @@
       popSound(cascade);
 
       addScore(matches.length * 10 * cascade);
+      creditOrder(matches.map(([r, c]) => grid[r][c].type));
       if (matches.length >= 4 && cascade === 1) showToast(pick(MSGS4));
       if (cascade >= 2) showToast(pick(MSGS_CASCADE));
 
@@ -447,19 +577,215 @@
     if (animated) beep(700, .15);
   }
 
-  // ---------- score, stack, toast ----------
+  // ---------- the order ----------
+  function planLevel(lv){
+    const nGoals = lv < 3 ? 1 : lv < 6 ? 2 : 3;
+    const total = ORDER_BASE + lv * ORDER_STEP;
+    const need = Math.max(5, Math.round(total / nGoals));
+    const shuffled = [...TYPES].sort(() => Math.random() - .5);
+    return {
+      goals: shuffled.slice(0, nGoals).map(type => ({ type, need, got: 0, el: null })),
+      time: Math.max(MIN_TIME, BASE_TIME - (lv - 1) * TIME_DROP),
+    };
+  }
+
+  function renderOrder(){
+    goalsEl.innerHTML = '';
+    for (const g of goals){
+      const el = document.createElement('span');
+      el.className = 'goal';
+      el.innerHTML = `<span class="g-emoji">${g.type}</span><span class="g-count"></span>`;
+      goalsEl.appendChild(el);
+      g.el = el;
+      paintGoal(g);
+    }
+    updateTicketCat();
+  }
+
+  function paintGoal(g){
+    const done = g.got >= g.need;
+    g.el.querySelector('.g-count').textContent = done ? '✓' : `${g.got}/${g.need}`;
+    g.el.classList.toggle('done', done);
+  }
+
+  function updateTicketCat(){
+    const pct = goals.length
+      ? goals.reduce((a, g) => a + Math.min(g.got / g.need, 1), 0) / goals.length
+      : 0;
+    ticketCat.textContent = CATS[Math.min(Math.floor(pct * CATS.length), CATS.length - 1)];
+  }
+
+  function creditOrder(types){
+    let gained = 0;
+    for (const type of types){
+      const g = goals.find(g => g.type === type && g.got < g.need);
+      if (!g) continue;
+      g.got++;
+      gained++;
+      g.el.classList.remove('bump');
+      void g.el.offsetWidth;
+      g.el.classList.add('bump');
+      paintGoal(g);
+      if (g.got >= g.need) beep(1046, .18, 'triangle', .14);   // that item is checked off
+    }
+    if (!gained) return;
+    updateTicketCat();
+    if (timed && phase === 'playing'){
+      const bonus = gained * TIME_BONUS;
+      timeLeft = Math.min(timeLeft + bonus * 1000, levelTime * 1000);
+      renderTimer();
+      floatTime('+' + (Math.round(bonus * 10) / 10) + 's');
+    }
+  }
+
+  const orderDone = () => goals.length > 0 && goals.every(g => g.got >= g.need);
+
+  function floatTime(text){
+    const el = document.createElement('div');
+    el.className = 'float-time';
+    el.textContent = text;
+    boardWrap.appendChild(el);
+    setTimeout(() => el.remove(), 1000);
+  }
+
+  // ---------- timer ----------
+  function renderTimer(){
+    const secs = Math.ceil(timeLeft / 1000);
+    timerSecs.textContent = secs;
+    const pct = Math.max(0, Math.min(1, timeLeft / (levelTime * 1000)));
+    timerFill.style.width = (pct * 100) + '%';
+    const low = secs <= 10;
+    timerFill.classList.toggle('low', low);
+    timerRow.classList.toggle('low', low);
+  }
+
+  function startTimer(){
+    stopTimer();
+    lastTick = performance.now();
+    timerId = setInterval(tick, 100);
+  }
+  function stopTimer(){
+    if (timerId) clearInterval(timerId);
+    timerId = null;
+  }
+  function tick(){
+    const now = performance.now();
+    const dt = now - lastTick;
+    lastTick = now;
+    if (phase !== 'playing' || document.hidden) return;   // pause when backgrounded
+    timeLeft -= dt;
+    if (timeLeft <= 0){
+      timeLeft = 0;
+      renderTimer();
+      stopTimer();
+      phase = 'timeup';
+      if (selected){ selected.el.classList.remove('selected'); selected = null; }
+      if (!busy) finishRound();                            // otherwise trySwap settles up
+      return;
+    }
+    renderTimer();
+  }
+
+  // ---------- flow ----------
+  function startGame(isTimed){
+    timed = isTimed;
+    timerRow.classList.toggle('hidden', !timed);
+    score = 0; scoreEl.textContent = 0;
+    level = 1;
+    initBoard();
+    size();
+    startLevel();
+  }
+
+  function startLevel(){
+    const plan = planLevel(level);
+    goals = plan.goals;
+    levelTime = plan.time;
+    timeLeft = plan.time * 1000;
+    levelEl.textContent = level;
+    renderOrder();
+    renderTimer();
+    hideOverlay();
+    phase = 'playing';
+    if (timed) startTimer(); else stopTimer();
+  }
+
+  function levelClear(){
+    stopTimer();
+    phase = 'clear';
+    if (selected){ selected.el.classList.remove('selected'); selected = null; }
+    const leftover = timed ? Math.floor(timeLeft / 1000) : 0;
+    if (leftover) addScore(leftover * LEFTOVER_PT);
+    showToast('Order up! 🧇');
+    fanfare();
+    setTimeout(() => {
+      showCard(`
+        <div class="emoji-row">🧇✨🐱</div>
+        <h2>Order up!</h2>
+        <p>Level ${level} served.${leftover ? ` <span class="stat">+${leftover * LEFTOVER_PT}</span> for ${leftover}s of syrup left.` : ''}</p>
+        <p class="stat">Score ${score}</p>
+      `, [
+        { label: 'Next order', sub: `Level ${level + 1}`, action: () => { level++; startLevel(); } },
+      ]);
+    }, 900);
+  }
+
+  function finishRound(){
+    if (orderDone()) { levelClear(); return; }   // a last-second cascade still counts
+    gameOver();
+  }
+
+  function gameOver(){
+    stopTimer();
+    phase = 'over';
+    if (selected){ selected.el.classList.remove('selected'); selected = null; }
+    sadTrombone();
+    const best = Math.max(score, +(localStorage.getItem(BEST_KEY) || 0));
+    try { localStorage.setItem(BEST_KEY, best); } catch(e){}
+    const isBest = score >= best && score > 0;
+    showCard(`
+      <div class="emoji-row">🍯😿</div>
+      <h2>Out of syrup!</h2>
+      <p>You served <span class="stat">${level - 1}</span> order${level - 1 === 1 ? '' : 's'}.</p>
+      <div class="big">${score}</div>
+      <p class="stat">${isBest ? '🏆 New best!' : best ? 'Best ' + best : ''}</p>
+    `, [
+      { label: 'Cook again', sub: 'Waffle Rush', action: () => startGame(true) },
+      { label: 'Cozy mode', sub: 'No timer, no losing', action: () => startGame(false), secondary: true },
+    ]);
+  }
+
+  function showMenu(){
+    phase = 'menu';
+    const best = +(localStorage.getItem(BEST_KEY) || 0);
+    showCard(`
+      <div class="emoji-row">🐱🧇🚕🗽🍎</div>
+      <h2>Penelope's Waffle Match</h2>
+      <p>Swap two neighbors to line up three. Fill the order on the ticket before the syrup runs out — every order tile you match pours a little syrup back.</p>
+      ${best ? `<p class="stat">Best ${best}</p>` : ''}
+    `, [
+      { label: 'Waffle Rush', sub: 'Beat the timer', action: () => startGame(true) },
+      { label: 'Cozy mode', sub: 'No timer, no losing', action: () => startGame(false), secondary: true },
+    ]);
+  }
+
+  function showCard(html, buttons){
+    card.innerHTML = html;
+    for (const b of buttons){
+      const btn = document.createElement('button');
+      btn.className = 'btn' + (b.secondary ? ' secondary' : '');
+      btn.innerHTML = b.label + (b.sub ? `<small>${b.sub}</small>` : '');
+      btn.addEventListener('click', () => { beep(760, .1); b.action(); });
+      card.appendChild(btn);
+    }
+    overlay.classList.add('show');
+  }
+  function hideOverlay(){ overlay.classList.remove('show'); }
+
+  // ---------- score, toast ----------
   function addScore(n){
     score += n;
     scoreEl.textContent = score;
-    const target = Math.min(Math.floor(score / 300), 10);
-    while (waffles < target){
-      waffles++;
-      const s = document.createElement('span');
-      s.textContent = '🧇';
-      stackEl.appendChild(s);
-      beep(880, .1, 'sine', .1);
-    }
-    stackCat.textContent = CATS[Math.min(Math.floor(waffles / 2.5), CATS.length - 1)];
   }
 
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
@@ -471,9 +797,13 @@
     toastTimer = setTimeout(() => toastEl.classList.remove('show'), 1100);
   }
 
+  // Don't burn the clock while the tab is hidden.
+  document.addEventListener('visibilitychange', () => { lastTick = performance.now(); });
+
   // ---------- go ----------
   initBoard();
   size();
+  showMenu();
 })();
 </script>
 </body>
