@@ -1,10 +1,12 @@
 # arcade
 
-Vibe coded games. Everything here is a single static HTML file — no build step, no dependencies.
+Vibe coded games. Every game is a single static HTML file — no build step, no dependencies.
 
 **Play: https://5x5x5x5.github.io/arcade/**
 
-## Penelope's Waffle Match (`index.html`)
+The root `index.html` is the landing page that lists the games.
+
+## Penelope's Waffle Match (`waffle-match/`)
 
 A cozy match-3. No timer, no losing.
 
@@ -31,4 +33,5 @@ files on the way out.
 ## Adding another game
 
 Drop it in its own folder with an `index.html` — `snake/index.html` is served at
-`/arcade/snake/`. The whole repo root is published as-is.
+`/arcade/snake/`. The whole repo root is published as-is. Then add a card for it
+to the `.games` list on the landing page.
