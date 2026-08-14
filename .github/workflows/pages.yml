@@ -24,10 +24,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          # Turns Pages on for the repo the first time this runs,
-          # so there is nothing to click in Settings.
-          enablement: true
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
