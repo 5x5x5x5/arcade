@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Waffle Snake</title>
+<meta name="description" content="Snake, but it's a stack of waffles. Eat the toppings, grow the stack.">
+<meta name="theme-color" content="#8ED4F0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Waffle Snake">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%87%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@600;800&family=Noto+Color+Emoji&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky1:#8ED4F0; --sky2:#C8ECF7;
+    --taxi:#FFC93C; --syrup:#6B3F17; --waffle:#F2A65A;
+    --cream:#FFF6E5; --coral:#FF7B54;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body{ height:100%; }
+  body{
+    font-family:'Nunito',sans-serif;
+    background:linear-gradient(var(--sky1), var(--sky2) 70%);
+    display:flex; flex-direction:column; align-items:center;
+    min-height:100vh; overflow:hidden; touch-action:none;
+    user-select:none; -webkit-user-select:none;
+    padding-top:env(safe-area-inset-top);
+  }
+  header{ text-align:center; padding:12px 10px 4px; }
+  h1{
+    font-family:'Fredoka',sans-serif; font-weight:700;
+    color:var(--syrup); font-size:clamp(1.4rem, 6vw, 2rem);
+    text-shadow:0 2px 0 #fff8;
+  }
+  .hud{ display:flex; align-items:center; gap:10px; justify-content:center; margin-top:6px; }
+  .badge{
+    background:var(--taxi); color:var(--syrup);
+    font-family:'Fredoka',sans-serif; font-weight:600;
+    font-size:1.05rem; padding:5px 14px; border-radius:14px;
+    border:3px solid var(--syrup); box-shadow:0 3px 0 var(--syrup);
+    min-width:84px; text-align:center;
+  }
+  .badge.best{ background:var(--cream); }
+  .btn{
+    background:var(--cream); border:3px solid var(--syrup);
+    border-radius:12px; font-size:1.05rem; padding:3px 9px;
+    box-shadow:0 3px 0 var(--syrup); cursor:pointer; text-decoration:none;
+    color:var(--syrup); font-family:'Fredoka',sans-serif; font-weight:600;
+  }
+  .btn:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--syrup); }
+  .btn:focus-visible{ outline:3px solid var(--coral); outline-offset:2px; }
+  .home{ position:fixed; left:10px; top:calc(12px + env(safe-area-inset-top)); }
+
+  #wrap{ position:relative; margin-top:10px; }
+  canvas{
+    display:block; background:var(--cream);
+    border:4px solid var(--syrup); border-radius:20px;
+    box-shadow:0 6px 0 var(--syrup), 0 14px 24px #0002;
+  }
+  #toast{
+    position:absolute; left:50%; top:40%;
+    transform:translate(-50%,-50%) scale(0);
+    font-family:'Fredoka',sans-serif; font-weight:700;
+    font-size:clamp(1.3rem, 6vw, 2.1rem);
+    color:#fff; background:var(--coral);
+    padding:8px 22px; border-radius:20px;
+    border:4px solid var(--syrup); box-shadow:0 5px 0 var(--syrup);
+    pointer-events:none; white-space:nowrap; z-index:3;
+    transition:transform .25s cubic-bezier(.34,1.6,.64,1); rotate:-4deg;
+  }
+  #toast.show{ transform:translate(-50%,-50%) scale(1); }
+  #overlay{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    background:#6B3F1733; border-radius:20px; z-index:4;
+  }
+  #overlay.hidden{ display:none; }
+  .card{
+    background:var(--cream); border:4px solid var(--syrup); border-radius:20px;
+    box-shadow:0 6px 0 var(--syrup); padding:18px 22px; text-align:center; max-width:86%;
+  }
+  .card .big{ font-size:2.4rem; }
+  .card h2{ font-family:'Fredoka',sans-serif; color:var(--syrup); font-size:1.4rem; margin-top:4px; }
+  .card p{ color:var(--syrup); font-weight:800; margin-top:6px; opacity:.85; }
+  .card .btn{ margin-top:12px; font-size:1.15rem; padding:6px 18px; background:var(--taxi); }
+
+  .pad{
+    display:grid; grid-template-columns:repeat(3, 58px); grid-template-rows:repeat(2, 50px);
+    gap:6px; margin-top:14px;
+  }
+  .pad button{
+    font-size:1.4rem; background:var(--cream); color:var(--syrup);
+    border:3px solid var(--syrup); border-radius:14px; box-shadow:0 3px 0 var(--syrup);
+    cursor:pointer; touch-action:none;
+  }
+  .pad button:active{ transform:translateY(2px); box-shadow:0 1px 0 var(--syrup); background:var(--taxi); }
+  .pad .up{ grid-column:2; grid-row:1; }
+  .pad .left{ grid-column:1; grid-row:2; }
+  .pad .down{ grid-column:2; grid-row:2; }
+  .pad .right{ grid-column:3; grid-row:2; }
+  .hint{ color:var(--syrup); opacity:.6; font-weight:800; font-size:.8rem; margin-top:8px; }
+  @media (hover:hover) and (pointer:fine){ .pad{ display:none; } }
+</style>
+</head>
+<body>
+<a class="btn home" href="../" aria-label="Back to the arcade">🕹️</a>
+<header>
+  <h1>Waffle Snake 🧇</h1>
+  <div class="hud">
+    <div class="badge" id="score">🧇 1</div>
+    <div class="badge best" id="best">⭐ 0</div>
+    <button class="btn" id="sound" aria-label="Toggle sound">🔊</button>
+  </div>
+</header>
+
+<div id="wrap">
+  <canvas id="board"></canvas>
+  <div id="toast" role="status"></div>
+  <div id="overlay">
+    <div class="card" id="card">
+      <div class="big">🧇🧇🧇🧈</div>
+      <h2>Grow the waffle stack!</h2>
+      <p>Eat toppings. Don't bite your own waffles.<br>Edges wrap around.</p>
+      <button class="btn" id="go">Start 🍳</button>
+    </div>
+  </div>
+</div>
+
+<div class="pad" aria-label="Direction pad">
+  <button class="up" data-dir="up" aria-label="Up">⬆️</button>
+  <button class="left" data-dir="left" aria-label="Left">⬅️</button>
+  <button class="down" data-dir="down" aria-label="Down">⬇️</button>
+  <button class="right" data-dir="right" aria-label="Right">➡️</button>
+</div>
+<div class="hint">Swipe, arrows / WASD, or the pad · Space to pause</div>
+
+<script>
+'use strict';
+/* ---------- tuning knobs ---------- */
+const COLS = 15, ROWS = 15;
+const START_TICK = 170;   // ms per step at the start
+const MIN_TICK   = 85;    // fastest it gets
+const SPEEDUP    = 4;     // ms faster per topping eaten
+const TOPPINGS = [
+  {e:'🧈', pts:1, w:4}, {e:'🍓', pts:1, w:3}, {e:'🫐', pts:1, w:3},
+  {e:'🍌', pts:1, w:2}, {e:'🍯', pts:3, w:1}   // golden syrup: +3 waffles
+];
+
+/* color-emoji fallback for platforms that draw canvas emoji in monochrome */
+let EMOJI_FONT = 'sans-serif';
+(function(){
+  try{
+    const c = document.createElement('canvas'); c.width = c.height = 24;
+    const g = c.getContext('2d');
+    g.font = '20px sans-serif'; g.textBaseline = 'top'; g.fillText('🧇', 0, 0);
+    const d = g.getImageData(0,0,24,24).data;
+    for(let i=0;i<d.length;i+=4)
+      if(d[i+3]>16 && (Math.abs(d[i]-d[i+1])>16 || Math.abs(d[i+1]-d[i+2])>16)) return;
+    if(document.fonts) document.fonts.load("20px 'Noto Color Emoji'")
+      .then(()=>{ EMOJI_FONT = "'Noto Color Emoji', sans-serif"; draw(); });
+  }catch(e){}
+})();
+
+const cv = document.getElementById('board');
+const ctx = cv.getContext('2d');
+let CELL = 24;
+function resize(){
+  const avail = Math.min(innerWidth - 32, innerHeight - (matchMedia('(hover:hover) and (pointer:fine)').matches ? 170 : 300));
+  CELL = Math.max(16, Math.floor(Math.min(avail, 600) / COLS));
+  const DPR = Math.min(devicePixelRatio||1, 2);
+  cv.width = COLS*CELL*DPR; cv.height = ROWS*CELL*DPR;
+  cv.style.width = COLS*CELL+'px'; cv.style.height = ROWS*CELL+'px';
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  draw();
+}
+
+/* ---------- state ---------- */
+const DIRS = { up:[0,-1], down:[0,1], left:[-1,0], right:[1,0] };
+let snake, dir, queue, food, grow, score, tick, running, paused, acc, last, dead, pops;
+let best = 0;
+try{ best = +localStorage.getItem('waffleSnakeBest') || 0; }catch(e){}
+document.getElementById('best').textContent = '⭐ ' + best;
+
+function reset(){
+  const cx = Math.floor(COLS/2), cy = Math.floor(ROWS/2);
+  snake = [{x:cx,y:cy},{x:cx-1,y:cy},{x:cx-2,y:cy}];
+  dir = 'right'; queue = []; grow = 0; score = 3;
+  tick = START_TICK; acc = 0; dead = false; paused = false; pops = [];
+  placeFood();
+  updateScore();
+}
+function pickTopping(){
+  const total = TOPPINGS.reduce((s,t)=>s+t.w, 0);
+  let r = Math.random()*total;
+  for(const t of TOPPINGS){ if((r -= t.w) < 0) return t; }
+  return TOPPINGS[0];
+}
+function placeFood(){
+  const free = [];
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++)
+    if(!snake.some(s=>s.x===x&&s.y===y)) free.push({x,y});
+  if(!free.length){ win(); return; }
+  const spot = free[Math.floor(Math.random()*free.length)];
+  food = {...spot, ...pickTopping(), born:performance.now()};
+}
+function updateScore(){
+  document.getElementById('score').textContent = '🧇 ' + snake.length;
+}
+
+/* ---------- input ---------- */
+const OPP = {up:'down', down:'up', left:'right', right:'left'};
+function turn(d){
+  if(!running || dead) return;
+  const lastDir = queue.length ? queue[queue.length-1] : dir;
+  if(d === lastDir || d === OPP[lastDir] || queue.length >= 2) return;
+  queue.push(d);
+}
+const KEYMAP = {arrowup:'up', w:'up', arrowdown:'down', s:'down', arrowleft:'left', a:'left', arrowright:'right', d:'right'};
+addEventListener('keydown', e=>{
+  const k = e.key.toLowerCase();
+  if(KEYMAP[k]){ e.preventDefault(); if(!running && !dead) start(); turn(KEYMAP[k]); }
+  else if(k===' '){ e.preventDefault(); if(dead||!running) start(); else togglePause(); }
+  else if(k==='enter' && (dead||!running)) start();
+});
+document.querySelectorAll('.pad button').forEach(b=>{
+  b.addEventListener('pointerdown', e=>{ e.preventDefault(); if(!running && !dead) start(); turn(b.dataset.dir); });
+});
+let touch0 = null;
+addEventListener('touchstart', e=>{ if(e.target.closest('button,a')) return; touch0 = {x:e.touches[0].clientX, y:e.touches[0].clientY}; }, {passive:true});
+addEventListener('touchmove', e=>{
+  if(!touch0) return;
+  const dx = e.touches[0].clientX - touch0.x, dy = e.touches[0].clientY - touch0.y;
+  if(Math.max(Math.abs(dx),Math.abs(dy)) < 24) return;
+  turn(Math.abs(dx) > Math.abs(dy) ? (dx>0?'right':'left') : (dy>0?'down':'up'));
+  touch0 = {x:e.touches[0].clientX, y:e.touches[0].clientY};
+}, {passive:true});
+addEventListener('touchend', ()=>{ touch0 = null; });
+
+/* ---------- sound ---------- */
+let audio = null, muted = false;
+const soundBtn = document.getElementById('sound');
+soundBtn.addEventListener('click', ()=>{ muted = !muted; soundBtn.textContent = muted?'🔇':'🔊'; });
+function ping(freq, len, delay=0, type='square', vol=.1){
+  if(muted) return;
+  try{
+    audio = audio || new (window.AudioContext||window.webkitAudioContext)();
+    const t = audio.currentTime + delay;
+    const o = audio.createOscillator(), g = audio.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(.001, t+len);
+    o.connect(g).connect(audio.destination);
+    o.start(t); o.stop(t+len);
+  }catch(e){}
+}
+
+/* ---------- toasts ---------- */
+const toastEl = document.getElementById('toast');
+let toastTimer = 0;
+function toast(msg){
+  toastEl.textContent = msg; toastEl.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>toastEl.classList.remove('show'), 1100);
+}
+const MILESTONES = {10:'Short stack! 🥞', 20:'Tall stack!', 30:'Brunch tower! 🗼', 45:'Waffle wyrm! 🐉', 60:'Legendary stack! 👑'};
+
+/* ---------- game flow ---------- */
+const overlay = document.getElementById('overlay');
+const card = document.getElementById('card');
+function start(){
+  reset();
+  running = true;
+  overlay.classList.add('hidden');
+  last = performance.now();
+  ping(523,.08); ping(784,.1,.08);
+}
+document.getElementById('go').addEventListener('click', start);
+function togglePause(){
+  paused = !paused;
+  if(paused){ showCard('☕', 'Coffee break', 'Press Space or tap Resume.', 'Resume ▶️', ()=>{ paused=false; overlay.classList.add('hidden'); last=performance.now(); }); }
+  else overlay.classList.add('hidden');
+}
+function showCard(big, title, text, label, onGo){
+  card.innerHTML = '';
+  const b = document.createElement('div'); b.className='big'; b.textContent=big;
+  const h = document.createElement('h2'); h.textContent=title;
+  const p = document.createElement('p'); p.innerHTML=text;
+  const btn = document.createElement('button'); btn.className='btn'; btn.textContent=label;
+  btn.addEventListener('click', onGo);
+  card.append(b,h,p,btn);
+  overlay.classList.remove('hidden');
+  btn.focus({preventScroll:true});
+}
+function gameOver(){
+  dead = true; running = false;
+  ping(330,.15,0,'sawtooth'); ping(247,.2,.14,'sawtooth'); ping(165,.3,.3,'sawtooth');
+  const n = snake.length;
+  let msg = `Your stack was <b>${n}</b> waffles tall.`;
+  if(n > best){
+    best = n;
+    try{ localStorage.setItem('waffleSnakeBest', best); }catch(e){}
+    document.getElementById('best').textContent = '⭐ ' + best;
+    msg += '<br>⭐ New best stack!';
+  }
+  setTimeout(()=>showCard('🫠', 'Syrup spill!', msg, 'Again 🧇', start), 450);
+}
+function win(){
+  dead = true; running = false;
+  [523,659,784,1047,1319].forEach((f,i)=>ping(f,.14,i*.1));
+  showCard('👑', 'You filled the whole plate!', 'A perfect waffle stack.', 'Again 🧇', start);
+}
+
+function step(){
+  if(queue.length) dir = queue.shift();
+  const [dx,dy] = DIRS[dir];
+  const head = snake[0];
+  const nx = (head.x + dx + COLS) % COLS, ny = (head.y + dy + ROWS) % ROWS;
+  // the tail cell frees up this step unless we're growing
+  const body = grow > 0 ? snake : snake.slice(0, -1);
+  if(body.some(s=>s.x===nx && s.y===ny)){ gameOver(); return; }
+  snake.unshift({x:nx, y:ny});
+  if(food && nx===food.x && ny===food.y){
+    grow += food.pts;
+    pops.push({x:nx, y:ny, t:performance.now(), e:food.e});
+    if(food.pts > 1){ toast('Golden syrup! +3 🍯'); ping(659,.08); ping(880,.08,.07); ping(1175,.12,.14); }
+    else ping(660 + Math.random()*120, .07, 0, 'triangle', .14);
+    tick = Math.max(MIN_TICK, tick - SPEEDUP);
+    placeFood();
+  }
+  if(grow > 0) grow--; else snake.pop();
+  const n = snake.length;
+  if(MILESTONES[n] && !MILESTONES[n].shown){ MILESTONES[n] = Object.assign(new String(MILESTONES[n]), {shown:true}); toast(String(MILESTONES[n])); }
+  updateScore();
+}
+
+/* ---------- render ---------- */
+function draw(){
+  if(!snake) return;
+  const w = COLS*CELL, h = ROWS*CELL;
+  // waffle-iron grid board
+  ctx.fillStyle = '#FFF6E5'; ctx.fillRect(0,0,w,h);
+  for(let y=0;y<ROWS;y++) for(let x=0;x<COLS;x++){
+    if((x+y)%2===0){ ctx.fillStyle = '#F9E7C8'; ctx.fillRect(x*CELL, y*CELL, CELL, CELL); }
+  }
+  const now = performance.now();
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+  // topping, with a gentle bob
+  if(food){
+    const age = Math.min(1, (now - food.born)/250);
+    const s = CELL*(0.8 + Math.sin(now/220)*0.05) * (0.3 + 0.7*age);
+    if(food.pts > 1){
+      ctx.fillStyle = '#FFC93C55';
+      ctx.beginPath(); ctx.arc((food.x+.5)*CELL, (food.y+.5)*CELL, CELL*.6, 0, Math.PI*2); ctx.fill();
+    }
+    ctx.font = s+'px '+EMOJI_FONT;
+    ctx.fillText(food.e, (food.x+.5)*CELL, (food.y+.55)*CELL);
+  }
+
+  // syrup trail linking neighbouring segments (skip across wrap seams)
+  ctx.strokeStyle = '#B5651D'; ctx.lineCap = 'round'; ctx.lineWidth = CELL*.32;
+  ctx.beginPath();
+  for(let i=1;i<snake.length;i++){
+    const a = snake[i-1], b = snake[i];
+    if(Math.abs(a.x-b.x)+Math.abs(a.y-b.y) !== 1) continue;
+    ctx.moveTo((a.x+.5)*CELL, (a.y+.5)*CELL);
+    ctx.lineTo((b.x+.5)*CELL, (b.y+.5)*CELL);
+  }
+  ctx.stroke();
+
+  // waffles, tail first so the head sits on top
+  for(let i=snake.length-1;i>=0;i--){
+    const s = snake[i];
+    const size = i===0 ? CELL*1.02 : CELL*(0.92 - Math.min(0.14, i*0.004));
+    ctx.save();
+    ctx.translate((s.x+.5)*CELL, (s.y+.5)*CELL);
+    ctx.rotate(((i*37)%11 - 5)*0.02);     // a little wobble so it reads as a stack, not a grid
+    ctx.font = size+'px '+EMOJI_FONT;
+    ctx.fillText('🧇', 0, CELL*.04);
+    ctx.restore();
+  }
+
+  // googly eyes on the head, looking where it's going
+  const hd = snake[0], [ex,ey] = DIRS[dir];
+  const hx = (hd.x+.5)*CELL, hy = (hd.y+.5)*CELL;
+  const px = -ey, py = ex;   // perpendicular
+  for(const side of [-1,1]){
+    const cx = hx + ex*CELL*.16 + px*side*CELL*.17;
+    const cy = hy + ey*CELL*.16 + py*side*CELL*.17;
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#6B3F17'; ctx.lineWidth = Math.max(1, CELL*.05);
+    ctx.beginPath(); ctx.arc(cx, cy, CELL*.13, 0, Math.PI*2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = '#2b1a0c';
+    ctx.beginPath(); ctx.arc(cx + ex*CELL*.05, cy + ey*CELL*.05, CELL*.06, 0, Math.PI*2); ctx.fill();
+  }
+
+  // little "+1" puffs where toppings were eaten
+  pops = pops.filter(p => now - p.t < 500);
+  for(const p of pops){
+    const k = (now - p.t)/500;
+    ctx.globalAlpha = 1-k;
+    ctx.font = (CELL*.7)+'px '+EMOJI_FONT;
+    ctx.fillText(p.e, (p.x+.5)*CELL, (p.y+.5 - k*1.2)*CELL);
+    ctx.globalAlpha = 1;
+  }
+}
+
+/* ---------- loop: fixed-step simulation, render every frame ---------- */
+function frame(now){
+  if(running && !paused){
+    acc += Math.max(0, Math.min(250, now - last));   // clamp: never negative, never a huge catch-up
+    while(acc >= tick && running){ acc -= tick; step(); }
+  }
+  last = now;
+  draw();
+  requestAnimationFrame(frame);
+}
+
+addEventListener('resize', resize);
+reset(); running = false;
+resize();
+last = performance.now();
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>

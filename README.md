@@ -52,6 +52,19 @@ You're the cat; chase the pups around a 3D park. No timer, no losing.
 Difficulty knobs, at the top of the `<script>`: `CAT_SPEED`, `DOG_FLEE` (the gap
 between them is how hard catching is), `FLEE_RADIUS`, and `START_DOGS`/`MAX_DOGS`.
 
+## Waffle Snake (`waffle-snake/`)
+
+Classic snake, except the snake is a stack of waffles glued together with syrup.
+
+- Swipe, use the on-screen pad (touch devices), or arrow keys / WASD. Space pauses.
+- Toppings grow the stack by one: 🧈 🍓 🫐 🍌. Golden syrup 🍯 is worth three.
+- Edges wrap around; the only way to lose is biting your own waffles.
+- Best stack is saved on the device. Milestone toasts at 10, 20, 30, 45 and 60.
+
+Difficulty knobs, at the top of the `<script>`: `COLS`/`ROWS` (board size),
+`START_TICK`, `MIN_TICK` and `SPEEDUP` (how fast it gets), and the `TOPPINGS`
+weights (raise 🍯's `w` for more bonus syrup).
+
 ## Deploying
 
 GitHub Pages serves the repo root of `main` as-is, so every push to `main` republishes the
